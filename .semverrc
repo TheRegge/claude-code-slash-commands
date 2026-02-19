@@ -2,7 +2,7 @@
   "project_type": "custom",
   "version_files": [
     {
-      "path": "README.txt",
+      "path": "README.md",
       "pattern": "Version:\\s*([0-9.]+(?:-[a-zA-Z0-9.]+)?)",
       "replacement": "Version: $VERSION"
     }
