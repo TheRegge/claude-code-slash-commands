@@ -113,6 +113,40 @@ Create `.semverrc` in project root to customize version locations:
 }
 ```
 
+### Handling Generated/Compiled Files
+
+For projects with build processes (SCSS→CSS, TypeScript→JS, etc.), mark compiled output files with `"generated": true`:
+
+```json
+{
+  "project_type": "wordpress-theme",
+  "version_files": [
+    {
+      "path": "src/style.scss",
+      "pattern": "Version:\\s*([0-9.]+(?:-[a-zA-Z0-9.]+)?)",
+      "replacement": "Version: $VERSION"
+    },
+    {
+      "path": "style.css",
+      "pattern": "Version:\\s*([0-9.]+(?:-[a-zA-Z0-9.]+)?)",
+      "replacement": "Version: $VERSION",
+      "generated": true
+    }
+  ]
+}
+```
+
+**Why use `generated`?**
+- Build processes often reset version numbers in output files
+- Files with `generated: true` are **skipped when reading** versions (prevents stale/reset versions)
+- They are **still updated when writing** versions (keeps compiled files in sync)
+
+**Use cases:**
+- SCSS/SASS → CSS compilation
+- TypeScript → JavaScript compilation
+- Any `dist/` or `build/` output files with version strings
+- Minified files (`.min.css`, `.min.js`)
+
 ## Examples:
 
 ```bash
@@ -359,6 +393,9 @@ For custom version locations (constants, configs, etc.):
   1. Run /semver --init
   2. Edit .semverrc
   3. Add custom file patterns
+
+For compiled/generated files (SCSS→CSS, TypeScript→JS):
+  Add "generated": true to skip reading but still update on write
 
 WORKFLOW:
   1. /semver --current                 # Check current state
