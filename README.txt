@@ -153,6 +153,50 @@ development effort, not AI-accelerated time.
 
 ---
 
+### /backport - Cross-Project Backport Manager
+
+Compares a clone application against its base project and helps backport improvements upstream.
+Designed for workflows where you maintain a "base" application (e.g., a Next.js starter) and
+clone it for each new project.
+
+**Key Features:**
+- AI-powered classification of changes as generic improvements vs app-specific customizations
+- Decision learning: tracks your patterns and improves suggestions over time
+- Incremental reviews: only shows changes since last session
+- Hunk-level review for mixed files (accept some changes, skip others)
+- Provenance tracking in the base project (.backport-registry.json)
+- Safe by default: never auto-skips, never overwrites uncommitted work
+
+**Core Modes:**
+- (default) - Review changes since last session
+- `apply` - Apply accepted backports to the base project
+- `--init` - First-time setup (configure base project path)
+- `--status` - Show dashboard of pending, applied, and deferred decisions
+- `--deferred` - Re-review previously deferred items
+
+**Flags:**
+- `--dry-run` or `-d` - Preview what would be applied
+- `--ignore <pattern>` - Add an ignore pattern
+- `--path <glob>` - Focus review on a specific directory
+- `--reset` - Clear all history and learned patterns
+
+**Usage Examples:**
+- `/backport --init` - First-time setup, configure base project path
+- `/backport` - Review recent changes with AI assessment
+- `/backport --path "src/lib/**"` - Review only shared library changes
+- `/backport apply` - Push accepted changes to base project
+- `/backport apply --dry-run` - Preview what would be applied
+- `/backport --status` - Show pending backports and learned patterns
+- `/backport --deferred` - Re-review deferred items
+
+**State Files:**
+- `.backport.json` - Clone-side config and decisions (add to .gitignore)
+- `.backport-registry.json` - Base-side provenance tracking (commit to git)
+
+**Agents:** backport-manager (main), backport-applier (sub-agent for applying changes)
+
+---
+
 ### /aidoc - Documentation Tracking File Manager
 
 Manages the `.aidoc` JSON tracking file that records which documentation has been created or
@@ -211,6 +255,24 @@ estimates. Evaluates code complexity, git history, and project scope to estimate
 developer hours, emphasizing realistic human pace over AI-accelerated development times.
 Users should use the `/timetrack` command instead of invoking this agent directly.
 
+### backport-manager (Internal)
+
+**Used by:** /backport
+**User-facing:** No - invoked internally by the /backport command
+
+Main agent for cross-project backporting. Compares a clone application against its base
+project, performs AI-powered diff analysis and classification, collects user decisions,
+tracks learned patterns, and delegates file application to the backport-applier sub-agent.
+
+### backport-applier (Internal)
+
+**Used by:** /backport (called by backport-manager)
+**User-facing:** No - invoked as a sub-agent by backport-manager
+
+Applies accepted backport changes to the base project. Validates base project state (clean
+git tree), copies/merges files, handles conflicts with AI-assisted resolution, and updates
+the base-side backport registry (.backport-registry.json).
+
 ### superpowers:code-reviewer (Automatic)
 
 **Used by:** Claude Code (automatically after major steps)
@@ -224,13 +286,16 @@ determines a logical chunk of work is complete, not invoked directly by the user
 ## How Commands and Agents Work Together
 
 ```
-User invokes          Command delegates to        Agent performs work
---------------        ----------------------      -------------------
-/document       -->   aidoc-tracker agent    -->   Updates .aidoc file
-/aidoc          -->   aidoc-tracker agent    -->   Updates .aidoc file
-/semver         -->   semver-manager agent   -->   Updates version files
-/timetrack      -->   time-tracker agent     -->   Creates .timetrack.json
-/gitco          -->   (no dedicated agent)   -->   Direct git operations
+User invokes          Command delegates to           Agent performs work
+--------------        --------------------------     ---------------------------
+/document       -->   dual-purpose-docs-writer  -->   Creates documentation
+                      aidoc-tracker             -->   Updates .aidoc file
+/aidoc          -->   aidoc-tracker             -->   Updates .aidoc file
+/semver         -->   semver-manager            -->   Updates version files
+/timetrack      -->   time-tracker              -->   Creates .timetrack.json
+/backport       -->   backport-manager          -->   Reviews cross-project diffs
+                      backport-applier          -->   Applies changes to base
+/gitco          -->   (no dedicated agent)      -->   Direct git operations
 ```
 
 The code-reviewer agent operates independently, invoked by Claude Code itself when it
@@ -239,8 +304,33 @@ detects that a significant implementation step has been completed.
 
 ## Installation
 
-These commands are automatically loaded by Claude Code when placed in the ~/.claude/commands
-directory. No additional setup is required.
+### Commands
+Command files (*.md) go in `~/.claude/commands/`. Claude Code loads them automatically.
+
+### Agents (Required)
+The commands depend on specialized agents to do their work. Agent definition files are
+included in the `agents/` subdirectory of this repository and **must be copied** to
+`~/.claude/agents/` for the commands to function.
+
+```bash
+# From this repository root:
+cp agents/*.md ~/.claude/agents/
+```
+
+If `~/.claude/agents/` does not exist, create it first:
+
+```bash
+mkdir -p ~/.claude/agents
+cp agents/*.md ~/.claude/agents/
+```
+
+**Agent files included:**
+- `aidoc-tracker.md` - Used by /document, /aidoc
+- `backport-applier.md` - Used by /backport (sub-agent)
+- `backport-manager.md` - Used by /backport
+- `dual-purpose-docs-writer.md` - Used by /document
+- `semver-manager.md` - Used by /semver
+- `time-tracker.md` - Used by /timetrack
 
 ## Contributing
 
