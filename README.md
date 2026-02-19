@@ -1,5 +1,5 @@
 # Custom Claude Code Slash Commands Repository
-# Version: 1.1.1
+![version](https://img.shields.io/badge/version-1.1.1-brightgreen)
 
 This repository contains custom slash commands for Claude Code, stored in ~/.claude/commands.
 
