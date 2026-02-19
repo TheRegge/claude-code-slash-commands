@@ -3,8 +3,8 @@
   "version_files": [
     {
       "path": "README.md",
-      "pattern": "Version:\\s*([0-9.]+(?:-[a-zA-Z0-9.]+)?)",
-      "replacement": "Version: $VERSION"
+      "pattern": "badge/version-([0-9.]+(?:-[a-zA-Z0-9.]+)?)-brightgreen",
+      "replacement": "badge/version-$VERSION-brightgreen"
     }
   ],
   "git_tag_prefix": "v",
