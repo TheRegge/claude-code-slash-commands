@@ -25,6 +25,7 @@ The command will:
 3. Search for related existing documentation to update or extend
 4. Generate documentation describing how the code works now
 5. Place documentation in the project's docs/ directory with LLM-optimized structure
+6. If a CLAUDE.md file exists in the project root, offer to update it with references to the new documentation
 
 By default, documentation focuses on the current state. Use `--changes` to include historical context.
 
@@ -114,3 +115,21 @@ For freeform instructions:
 - If unclear, treat as freeform and parse the intent
 
 If the user provided specific arguments (structured patterns like "feature auth system", freeform instructions like "ensure auth is documented", or flags), focus on those areas while documenting the current state.
+
+**CRITICAL: CLAUDE.md Sync (Post-Documentation Step)**
+After the aidoc-tracker agent has completed, perform the following as a final post-processing step:
+
+1. **Check for CLAUDE.md in the project root**: Check whether a file named `CLAUDE.md` exists in the project root (the current working directory). This must target the project-level CLAUDE.md, NOT `~/.claude/CLAUDE.md`. If no CLAUDE.md is found, stop here — do not create one.
+
+2. **Ask for user consent before making any changes**: If CLAUDE.md exists, ask the user: "A CLAUDE.md file was found in the project root. Would you like me to update it to reference the documentation that was just created? I'll only touch sections related to the documented areas and leave everything else intact." Wait for an explicit answer. If the user declines, skip this step entirely.
+
+3. **Read both sources**: Read the full content of `./CLAUDE.md`. Read the content of all documentation files created or updated in this run (from the `docs_created` list).
+
+4. **Apply an intelligent, surgical update** following these rules:
+   - Do NOT overwrite or modify sections of CLAUDE.md that are unrelated to the areas just documented.
+   - For sections that already cover a documented topic: update only the doc file reference path and any one-line summary if the behavior has changed. Do not rewrite the entire section.
+   - For documented topics with no existing CLAUDE.md coverage: append a concise new entry (3-5 lines maximum) containing the topic name, a one-sentence description, and a relative Markdown link to the doc file. Do not copy documentation content into CLAUDE.md.
+   - Special case — empty CLAUDE.md: If the file exists but contains no substantive content, offer to populate it with a minimal starter structure: a brief project overview placeholder and a "## Documentation" section listing all docs just created as relative links.
+   - Keep CLAUDE.md as a quick-reference, not a mirror of the docs directory.
+
+5. **Report the changes**: After writing, briefly summarize what was added or updated in CLAUDE.md (e.g., "Added reference to `docs/features/auth.md` under Authentication; updated API section with link to `docs/api/endpoints.md`"). This lets the user verify the changes at a glance.
