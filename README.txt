@@ -1,4 +1,5 @@
 # Custom Claude Code Slash Commands Repository
+# Version: 0.1.0
 
 This repository contains custom slash commands for Claude Code, stored in ~/.claude/commands.
 
