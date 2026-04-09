@@ -13,6 +13,7 @@ Please create git commits based on the current staged changes. When creating com
 - `--type <type>`: Format as conventional commit (feat, fix, docs, refactor, test, style, chore)
 - `--all` or `-a`: Stage all changes before committing
 - `--amend`: Amend the last commit instead of creating new one
+- `--review`: Run a quick code review before committing (calls the code-reviewer agent)
 
 ## Behavior:
 
@@ -21,6 +22,19 @@ Please create git commits based on the current staged changes. When creating com
 - Analyze staged changes with `git diff --cached`
 - Generate a single descriptive commit message
 - Execute the commit
+
+### Review mode (`--review`):
+
+1. Before creating the commit, run the code-reviewer agent in condensed mode on the staged changes
+2. The reviewer checks for critical bugs, security issues, and warnings
+3. Based on the reviewer verdict:
+   - **PASS**: Proceed with the commit normally
+   - **WARN**: Show the warnings and ask the user whether to proceed or abort
+   - **FAIL**: Show the critical issues and recommend aborting — ask the user to confirm before proceeding
+4. If the user chooses to abort, exit without committing
+5. If the user chooses to proceed despite warnings/failures, continue with the commit
+
+Note: When calling the code-reviewer agent for `--review`, include this instruction in the prompt: "This is being called from /gitco --review. Use condensed output mode — only report Critical and Warning items, and end with a REVIEW_VERDICT line."
 
 ### Split mode (`--split`):
 
@@ -103,8 +117,9 @@ OPTIONS:
   --split                       Analyze changes and create multiple logical commits
   -i, --interactive             Show proposed commits before executing (works with --split)
   --type <type>                 Format as conventional commit (feat|fix|docs|refactor|test|style|chore)
-  -a, --all                     Stage all changes before committing  
+  -a, --all                     Stage all changes before committing
   --amend                       Amend the last commit instead of creating new one
+  --review                      Run quick code review before committing
 
 EXAMPLES:
   /gitco                                           # Auto-generate commit message
@@ -113,6 +128,8 @@ EXAMPLES:
   /gitco --type feat "Add user dashboard"          # Conventional commit format
   /gitco --all --type fix "Handle null values"     # Stage all files + conventional commit
   /gitco --amend "Updated commit message"          # Amend last commit
+  /gitco --review                                  # Review then commit
+  /gitco --review --type feat "Add login"          # Review + conventional commit
 
 FEATURES:
   • Smart commit message generation based on staged changes
@@ -121,15 +138,25 @@ FEATURES:
   • Conventional commit format support
   • Automatic staging option
   • Last commit amendment
+  • Pre-commit code review (--review)
 
 CONVENTIONAL COMMIT TYPES:
   feat      New features
-  fix       Bug fixes  
+  fix       Bug fixes
   docs      Documentation changes
   refactor  Code restructuring
   test      Adding/updating tests
   style     Formatting, missing semicolons
   chore     Maintenance tasks
+
+REVIEW WORKFLOW:
+  /gitco --review runs a quick code review before committing:
+    PASS  → commit proceeds normally
+    WARN  → warnings shown, you decide to proceed or abort
+    FAIL  → critical issues shown, recommended to abort
+
+  For a full review, use /review before /gitco:
+    /review → fix issues → /gitco
 
 For more details, see the full command documentation.
 ```

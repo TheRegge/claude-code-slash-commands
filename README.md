@@ -1,5 +1,5 @@
 # Custom Claude Code Slash Commands Repository
-![version](https://img.shields.io/badge/version-1.1.1-brightgreen)
+![version](https://img.shields.io/badge/version-1.2.0-brightgreen)
 
 This repository contains custom slash commands for Claude Code, stored in ~/.claude/commands.
 
@@ -45,6 +45,7 @@ Manages semantic versioning across multiple project types with auto-detection, c
 checking, and git integration.
 
 **Supported Project Types:**
+- Unity (ProjectSettings/ProjectSettings.asset)
 - React / Next.js (package.json)
 - WordPress Plugin (main PHP file + readme.txt)
 - WordPress Theme (style.css)
@@ -58,7 +59,9 @@ checking, and git integration.
 - Prerelease support (alpha, beta, rc)
 - Dry-run mode to preview changes
 - Git commit and tag creation
-- iOS build number management (--build-number, --increment-build, --reset-build)
+- iOS/Unity build number management (--build-number, --increment-build, --reset-build)
+- README version badge auto-detection and sync (all project types)
+- Subfolder project support via `project_root` config (monorepos, Unity projects)
 - Custom configuration via .semverrc
 - Generated file support (skip reading, still update on write)
 

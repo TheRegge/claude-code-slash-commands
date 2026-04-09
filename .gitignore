@@ -1,2 +1,8 @@
 # Semver cache (auto-generated)
 .semver-cache.json
+
+# Local Claude settings
+.claude/settings.local.json
+
+# Temp files
+*.tmp
