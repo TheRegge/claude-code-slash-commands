@@ -1,6 +1,6 @@
 # Semantic Version Management
 
-Manage semantic versioning across React, Next.js, WordPress Plugin/Theme, Swift iOS/macOS, and Swift Package projects.
+Manage semantic versioning across React, Next.js, WordPress Plugin/Theme, Swift iOS/macOS, Swift Package, and Unity projects.
 
 **IMPORTANT**: If the user provides `--help` or `-h` as an argument, display the complete usage information below instead of executing any operations.
 
@@ -27,18 +27,19 @@ Manage semantic versioning across React, Next.js, WordPress Plugin/Theme, Swift 
 - `--git-tag`: Create git tag after version bump (implies --git-commit)
 - `--force`: Skip version consistency checks
 
-**iOS/macOS Specific Options:**
+**iOS/macOS/Unity Specific Options:**
 - `--build-number N`: Set explicit build number (e.g., `--build-number 100`)
-- `--increment-build`: Auto-increment build number (default for iOS)
-- `--reset-build`: Reset build number to 1 on version bump
+- `--increment-build`: Auto-increment build number (default for iOS and Unity)
+- `--reset-build`: Reset build number on version bump (to 1 for iOS, to 0 for Unity)
 
 ## Behavior:
 
 ### Auto-detection
 On first run, the agent will:
-1. Detect project type (React/Next.js, WordPress Plugin/Theme, Swift iOS/macOS, Swift Package)
+1. Detect project type (Unity, React/Next.js, WordPress Plugin/Theme, Swift iOS/macOS, Swift Package)
 2. Locate standard version files
-3. Create `.semver-cache.json` for faster subsequent runs
+3. Check for README version badge (all project types)
+4. Create `.semver-cache.json` for faster subsequent runs
 
 ### Supported Project Types
 
@@ -66,6 +67,20 @@ On first run, the agent will:
 - Detects: `Package.swift` file (without `.xcodeproj`)
 - Updates: Git tags only (no files modified)
 - Note: SPM uses tags WITHOUT `v` prefix (`1.2.3` not `v1.2.3`)
+
+**Unity:**
+- Detects: `ProjectSettings/ProjectSettings.asset` with `bundleVersion:` (at root or in immediate subdirectory)
+- Updates: `ProjectSettings/ProjectSettings.asset` only (bundleVersion, platform versions, build numbers)
+- Build outputs (`iosBuild/`, `webglBuild/`) are NOT updated — Unity propagates version on build
+- Supports: Build number management (`--build-number`, `--increment-build`, `--reset-build`)
+- Note: Subfolder projects supported via auto-detection or `project_root` in `.semverrc`
+- Note: 2-component versions (e.g., `1.0`) are normalized to 3-component semver (`1.0.0`)
+
+**README Version Badge (all project types):**
+- On first run, checks for `README.md` / `README.txt` at repo root
+- If a shields.io version badge exists, it is kept in sync on version bumps
+- If README exists without a badge, prompts to add one
+- Badge format: `![version](https://img.shields.io/badge/version-X.X.X-brightgreen)`
 
 ### Version Bumping Rules
 
@@ -112,6 +127,26 @@ Create `.semverrc` in project root to customize version locations:
   "commit_message_template": "chore: bump version to $VERSION"
 }
 ```
+
+### Subfolder Projects (e.g., Unity in a monorepo)
+
+Add `project_root` to `.semverrc` when the project is not at the repo root:
+
+```json
+{
+  "project_type": "unity",
+  "project_root": "my-game",
+  "version_files": [
+    {
+      "path": "ProjectSettings/ProjectSettings.asset",
+      "pattern": "bundleVersion: ([0-9.]+(?:-[a-zA-Z0-9.]+)?)",
+      "replacement": "bundleVersion: $VERSION"
+    }
+  ]
+}
+```
+
+The `project_root` field specifies a subdirectory; all `version_files` paths resolve relative to it. Config files (`.semverrc`, `.semver-cache.json`) and README stay at the repo root. This field works with any project type, not just Unity.
 
 ### Handling Generated/Compiled Files
 
@@ -275,6 +310,25 @@ git push --tags
 # Output: Current version: 1.2.4 (from git tag)
 ```
 
+### Unity Game Development
+```bash
+# Auto-detect Unity project (even in subfolder)
+/semver --current
+# Output: Version: 1.0.0 (normalized from 1.0) | Build: 0
+
+# Standard patch release (auto-increments build)
+/semver patch                    # 1.0.0 (build 0) → 1.0.1 (build 1)
+
+# Minor release, reset build to 0
+/semver minor --reset-build      # 1.0.1 (build 1) → 1.1.0 (build 0)
+
+# Major release with git tag
+/semver major --git-tag           # 1.1.0 → 2.0.0
+
+# Preview changes
+/semver patch --dry-run
+```
+
 ## Cache and Configuration Files
 
 **`.semver-cache.json`** (auto-generated):
@@ -345,17 +399,20 @@ OPTIONS:
   --git-tag                     Create git tag (+ commit)
   --force                       Skip consistency checks
 
-iOS/macOS OPTIONS:
+iOS/macOS/Unity OPTIONS:
   --build-number N              Set explicit build number
   --increment-build             Auto-increment build (default)
-  --reset-build                 Reset build to 1
+  --reset-build                 Reset build (to 1 for iOS, 0 for Unity)
 
 SUPPORTED PROJECTS:
+  • Unity                      (ProjectSettings/ProjectSettings.asset)
   • React/Next.js              (package.json)
   • WordPress Plugin           (*.php header + readme.txt)
   • WordPress Theme            (style.css header)
   • Swift iOS/macOS App        (*.xcodeproj/project.pbxproj)
   • Swift Package (SPM)        (Package.swift + git tags)
+
+  README version badge auto-detected and kept in sync for all project types.
 
 EXAMPLES:
   /semver --current                    # Show current version
@@ -373,6 +430,11 @@ iOS/macOS EXAMPLES:
 Swift Package EXAMPLES:
   /semver patch                        # Creates tag: 1.2.4 (no 'v' prefix)
   /semver prerelease beta              # Creates tag: 1.2.4-beta.1
+
+Unity EXAMPLES:
+  /semver patch                        # 1.0.0 (build 0) → 1.0.1 (build 1)
+  /semver minor --reset-build          # Reset build to 0 on version bump
+  /semver --current                    # Show version + per-platform builds
 
 VERSION FORMAT (Semantic Versioning):
   MAJOR.MINOR.PATCH[-PRERELEASE]
