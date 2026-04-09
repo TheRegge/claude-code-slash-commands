@@ -64,7 +64,7 @@ If `CHANGELOG.md` already exists, report it and do nothing (unless `--full` is a
        - `test` → (skip unless `--include-tests`)
        - `style` → (skip unless `--include-style`)
        - `chore` → (skip unless `--include-chore`)
-       - `breaking` or `!` suffix → **Breaking Changes** (always shown first)
+       - breaking or BREAKING CHANGE footer → **Breaking Changes** (always shown first)
    - If not conventional commit format:
      - Analyze the commit message and diff to classify
      - Use best judgment to categorize as Added/Fixed/Changed/Removed
